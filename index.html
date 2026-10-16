@@ -1,916 +1,798 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full bg-slate-900 text-slate-100">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLASFER — Control Integral Ganadero y Agrícola LoRaWAN</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet JS y CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Leaflet Draw -->
-        // Initialize Map
-        function initMap() {
-            if (map) {
-                map.remove();
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLASFER - Soluciones IoT & Agrotech</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Custom Config -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            blasfer: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              dark: '#0d1f14',
+              card: '#13231a'
             }
-            // Center map on coordinates: Lat -38.470694, Lng -63.123916 (Campo BLASFER)
-            map = L.map('map').setView([-38.470694, -63.123916], 14);
+          }
+        }
+      }
+    }
+  </script>
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-            // Add marker for main field / headquarters
-            const mainMarker = L.marker([-38.470694, -63.123916]).addTo(map)
-                .bindPopup('<b>Campo Principal BLASFER</b><br>Lat: -38.470694, Lng: -63.123916')
-                .openPopup();
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-            renderPolygons();
-        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #080c14; color: #f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .leaflet-container { background: #0b1320 !important; border-radius: 0.75rem; }
-        .leaflet-draw-toolbar a { background-color: #111827 !important; border-color: #374151 !important; color: #fff !important; }
-        .leaflet-draw-actions a { background-color: #1f2937 !important; color: #fff !important; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0b1320; }
-        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #374151; }
-        .pulse-dot {
-            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-            animation: pulse 1.8s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
-        }
-    </style>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Estilos personalizados para el mapa */
+    #map {
+      height: 100%;
+      width: 100%;
+      min-height: 480px;
+      z-index: 10;
+      border-radius: 0.75rem;
+    }
+    .leaflet-popup-content-wrapper {
+      background-color: #1e293b !important;
+      color: #f8fafc !important;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-tip {
+      background-color: #1e293b !important;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #22c55e;
+    }
+  </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden select-none">
+<body class="h-full flex flex-col md:flex-row overflow-hidden bg-slate-950 text-slate-100">
 
-    <!-- Navegación Lateral / Menú -->
-    <aside class="w-full md:w-64 bg-slate-900/90 backdrop-blur border-r border-slate-800 flex flex-col justify-between shrink-0 z-20">
+  <!-- ================= SIDEBAR NAV ================= -->
+  <aside class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0 z-20">
+    <div>
+      <!-- Brand Logo Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center shadow-lg shadow-green-900/40">
+            <i class="fa-solid fa-tower-broadcast text-slate-950 text-xl"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg tracking-wider text-white flex items-center gap-1">
+              BLASFER <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">v3.2</span>
+            </h1>
+            <p class="text-xs text-slate-400 font-medium tracking-tight">Soluciones IoT & Agrotech</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="p-3 space-y-1">
+        <button onclick="switchTab('mapa')" id="nav-mapa" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-emerald-600 text-white shadow-md shadow-emerald-900/30">
+          <i class="fa-solid fa-map-location-dot w-5 text-center text-base"></i>
+          <span>Mapa & Rotación</span>
+        </button>
+
+        <button onclick="switchTab('cuadros')" id="nav-cuadros" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <i class="fa-solid fa-vector-square w-5 text-center text-base"></i>
+          <span>Cuadros & Pasturas</span>
+        </button>
+
+        <button onclick="switchTab('rodeos')" id="nav-rodeos" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <i class="fa-solid fa-cow w-5 text-center text-base"></i>
+          <span>Rodeos & Hacienda</span>
+        </button>
+
+        <button onclick="switchTab('telemetria')" id="nav-telemetria" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <i class="fa-solid fa-signal w-5 text-center text-base"></i>
+          <span>Telemetría LoRaWAN</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Field & System Quick Info -->
+    <div class="p-4 border-t border-slate-800 bg-slate-900/50 space-y-3">
+      <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span class="font-semibold text-slate-300">ESTABLECIMIENTO</span>
+          <span class="inline-flex items-center gap-1 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Activo</span>
+        </div>
+        <p class="text-sm font-bold text-white truncate">Estancia "La Esperanza"</p>
+        <p class="text-[11px] text-slate-400 font-mono mt-0.5">Lat: -38.47069 | Lng: -63.12391</p>
+      </div>
+
+      <div class="flex gap-2 text-xs">
+        <button onclick="exportData()" class="flex-1 py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium transition-colors flex items-center justify-center gap-1">
+          <i class="fa-solid fa-download text-xs text-emerald-400"></i> Exportar
+        </button>
+        <button onclick="document.getElementById('importFile').click()" class="flex-1 py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium transition-colors flex items-center justify-center gap-1">
+          <i class="fa-solid fa-upload text-xs text-blue-400"></i> Importar
+        </button>
+        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN CONTENT AREA ================= -->
+  <main class="flex-1 flex flex-col h-full overflow-y-auto bg-slate-950">
+    
+    <!-- Top KPI Status Bar -->
+    <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 px-6 py-3 grid grid-cols-2 sm:grid-cols-4 gap-4 shrink-0">
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <i class="fa-solid fa-cow text-lg"></i>
+        </div>
         <div>
-            <!-- Marca y Logo BLASFER -->
-            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="bg-gradient-to-br from-emerald-500 to-green-700 p-2.5 rounded-xl text-white font-black text-xl shadow-lg shadow-green-950/50">
-                        📡
-                    </div>
-                    <div>
-                        <h1 class="font-black text-xl tracking-wider text-white">BLAS<span class="text-emerald-400">FER</span></h1>
-                        <p class="text-[9px] text-emerald-400/80 uppercase tracking-widest font-bold">Soluciones IoT & Agrotech</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botones de Navegación -->
-            <nav class="p-3 space-y-1 text-sm font-semibold">
-                <button onclick="switchTab('mapa')" id="nav-mapa" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-950/40 transition">
-                    <i data-lucide="map" class="w-4 h-4"></i> Mapa & Rotación
-                </button>
-                <button onclick="switchTab('potreros')" id="nav-potreros" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
-                    <i data-lucide="sprout" class="w-4 h-4"></i> Cuadros / Pasturas
-                </button>
-                <button onclick="switchTab('rodeos')" id="nav-rodeos" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
-                    <i data-lucide="beef" class="w-4 h-4"></i> Rodeos & Hacienda
-                </button>
-                <button onclick="switchTab('lora')" id="nav-lora" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
-                    <i data-lucide="radio" class="w-4 h-4"></i> Telemetría LoRaWAN
-                </button>
-            </nav>
+          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Cabezas</p>
+          <p id="kpi-total-cabeza" class="text-lg font-bold text-white">600 <span class="text-xs font-normal text-slate-400">caravanas</span></p>
         </div>
+      </div>
 
-        <!-- Información del Establecimiento -->
-        <div class="p-4 border-t border-slate-800 bg-slate-950/80 space-y-3">
-            <div>
-                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Establecimiento / Campo</div>
-                <div class="text-sm font-bold text-white flex items-center gap-2 mt-0.5">
-                    <i data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i> Estancia "La Esperanza"
-                </div>
-            </div>
-            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-                <div class="flex items-center justify-between">
-                    <span>Estación Base AU915:</span>
-                    <span class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block pulse-dot"></span> En Línea</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span>Caravanas Activas:</span>
-                    <span class="text-white font-bold" id="sidebar-total-caravanas">600 Caravanas</span>
-                </div>
-            </div>
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <i class="fa-solid fa-border-all text-lg"></i>
         </div>
-    </aside>
+        <div>
+          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Potreros Activos</p>
+          <p id="kpi-potreros-count" class="text-lg font-bold text-white">4 <span class="text-xs font-normal text-slate-400">cuadros</span></p>
+        </div>
+      </div>
 
-    <!-- Área Principal de Contenido -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-950">
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <i class="fa-solid fa-satellite-dish text-lg"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Red LoRaWAN</p>
+          <p class="text-lg font-bold text-emerald-400 flex items-center gap-1.5">
+            100% <span class="text-xs text-slate-400 font-normal">Online</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <i class="fa-solid fa-battery-three-quarters text-lg"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Batería Promedio</p>
+          <p class="text-lg font-bold text-white">94% <span class="text-xs text-slate-400 font-normal">(Solar OK)</span></p>
+        </div>
+      </div>
+    </header>
+
+    <!-- TAB 1: MAPA & ROTACIÓN -->
+    <section id="tab-mapa" class="flex-1 p-4 md:p-6 flex flex-col gap-4 h-full">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-map text-emerald-400"></i> Geocercas y Posicionamiento en Tiempo Real
+          </h2>
+          <p class="text-xs text-slate-400">Monitoreo de coordenadas exactas (-38.470694, -63.123916)</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleMapLayer()" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-emerald-400"></i> <span id="map-layer-label">Vista Satelital HD</span>
+          </button>
+          <button onclick="centerField()" class="px-3 py-1.5 text-xs font-medium bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-lg flex items-center gap-1.5">
+            <i class="fa-solid fa-crosshairs"></i> Centrar Campo
+          </button>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div class="flex-1 relative min-h-[450px] bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-inner">
+        <div id="map"></div>
         
-        <!-- Barra Superior -->
-        <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 p-4 flex flex-wrap items-center justify-between gap-4 shrink-0 z-10">
+        <!-- Floating Live Alert Overlay -->
+        <div class="absolute top-4 right-4 z-[500] bg-slate-900/90 backdrop-blur-md p-3 rounded-xl border border-slate-800 shadow-2xl max-w-xs text-xs space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span class="font-bold text-slate-200 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Telemetría de Cerco
+            </span>
+            <span class="text-[10px] bg-emerald-900/50 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-700/50">OK</span>
+          </div>
+          <p class="text-slate-300">Todas las 600 caravanas se encuentran dentro de las geocercas programadas.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: CUADROS & PASTURAS -->
+    <section id="tab-cuadros" class="hidden flex-1 p-4 md:p-6 space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-lg font-bold text-white">Administración de Potreros y Pasturas</h2>
+          <p class="text-xs text-slate-400">Estado agronómico, días de pastoreo y descansos del suelo</p>
+        </div>
+        <button onclick="openModalAddPotrero()" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-900/40 flex items-center gap-2">
+          <i class="fa-solid fa-plus"></i> Añadir Potrero
+        </button>
+      </div>
+
+      <!-- Potreros Grid -->
+      <div id="potreros-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 3: RODEOS & HACIENDA -->
+    <section id="tab-rodeos" class="hidden flex-1 p-4 md:p-6 space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-lg font-bold text-white">Rodeos y Control de Hacienda</h2>
+          <p class="text-xs text-slate-400">Asignación de lotes, caravanas LoRaWAN y rotación de cuadro</p>
+        </div>
+      </div>
+
+      <!-- Rodeos Table -->
+      <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <tr>
+                <th class="p-3.5">Nombre del Rodeo</th>
+                <th class="p-3.5">Categoría</th>
+                <th class="p-3.5 text-center">Cabezas / Caravanas</th>
+                <th class="p-3.5">Potrero Actual</th>
+                <th class="p-3.5">Días en Cuadro</th>
+                <th class="p-3.5 text-right">Acción Rotación</th>
+              </tr>
+            </thead>
+            <tbody id="rodeos-table-body" class="divide-y divide-slate-800/60">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: TELEMETRÍA LORAWAN -->
+    <section id="tab-telemetria" class="hidden flex-1 p-4 md:p-6 space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-lg font-bold text-white">Red LoRaWAN & Telemetría en Vivo</h2>
+          <p class="text-xs text-slate-400">Estado de Estación Base AU915 y paquetes de datos en tiempo real</p>
+        </div>
+        <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono rounded-full flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> GW AU915: OPERATIVO
+        </span>
+      </div>
+
+      <!-- Telemetry Technical Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center text-xs text-slate-400">
+            <span>Frecuencia Regional</span>
+            <i class="fa-solid fa-microchip text-slate-500"></i>
+          </div>
+          <p class="text-xl font-bold text-white font-mono">AU915-928 MHz</p>
+          <p class="text-[11px] text-slate-500">Sub-banda 2 (Argentina / Latinoamérica)</p>
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center text-xs text-slate-400">
+            <span>Señal Promedio (RSSI)</span>
+            <i class="fa-solid fa-wifi text-slate-500"></i>
+          </div>
+          <p class="text-xl font-bold text-emerald-400 font-mono">-98 dBm <span class="text-xs text-slate-400">(Excelente)</span></p>
+          <p class="text-[11px] text-slate-500">SNR Promedio: +8.5 dB</p>
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex justify-between items-center text-xs text-slate-400">
+            <span>Tasa de Recepción</span>
+            <i class="fa-solid fa-diagram-project text-slate-500"></i>
+          </div>
+          <p class="text-xl font-bold text-blue-400 font-mono">99.8% PER</p>
+          <p class="text-[11px] text-slate-500">12 pkts / min por nodo</p>
+        </div>
+      </div>
+
+      <!-- Realtime Log Monitor -->
+      <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-2">
+            <i class="fa-solid fa-terminal text-emerald-400"></i> Console Gateway Feed (Uplinks)
+          </h3>
+          <span class="text-[10px] font-mono text-slate-500">300ms refresh</span>
+        </div>
+        <div id="telemetry-log" class="font-mono text-[11px] h-64 overflow-y-auto space-y-1.5 p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-slate-300">
+          <!-- Live JS Telemetry lines -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL MOVER RODEO ================= -->
+  <div id="modal-mover" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-white text-base flex items-center gap-2">
+          <i class="fa-solid fa-truck-ramp-box text-emerald-400"></i> Rotar / Mover Rodeo
+        </h3>
+        <button onclick="closeModalMover()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 font-medium mb-1">Rodeo Seleccionado</label>
+          <input type="text" id="mover-rodeo-nombre" readonly class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-200 font-semibold">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-medium mb-1">Nuevo Potrero de Destino</label>
+          <select id="mover-potrero-destino" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+            <!-- Options added dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModalMover()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-semibold">Cancelar</button>
+        <button onclick="confirmarMovimiento()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold">Confirmar Rotación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT CORREGIDO Y ENCAPSULADO ================= -->
+  <script>
+    // --- ESTADO INICIAL DEL CAMPO BLASFER (-38.470694, -63.123916) ---
+    const CAMPO_CENTER = [-38.470694, -63.123916];
+
+    let fieldData = {
+      potreros: [
+        {
+          id: "pot-1",
+          nombre: "Potrero Norte (Alfalfa)",
+          cultivo: "Alfalfa pura",
+          fechaSiembra: "2024-03-15",
+          estado: "En Pastoreo",
+          coords: [
+            [-38.4660, -63.1290],
+            [-38.4660, -63.1190],
+            [-38.4710, -63.1190],
+            [-38.4710, -63.1290]
+          ],
+          color: "#22c55e"
+        },
+        {
+          id: "pot-2",
+          nombre: "Potrero Sur (Raigrás)",
+          cultivo: "Raigrás Anual + Trébol",
+          fechaSiembra: "2024-04-10",
+          estado: "En Descanso",
+          coords: [
+            [-38.4715, -63.1290],
+            [-38.4715, -63.1190],
+            [-38.4765, -63.1190],
+            [-38.4765, -63.1290]
+          ],
+          color: "#3b82f6"
+        },
+        {
+          id: "pot-3",
+          nombre: "Potrero Este (Verdeo)",
+          cultivo: "Avena / Cereal de Invierno",
+          fechaSiembra: "2024-05-02",
+          estado: "Listo para Ingreso",
+          coords: [
+            [-38.4660, -63.1180],
+            [-38.4660, -63.1090],
+            [-38.4710, -63.1090],
+            [-38.4710, -63.1180]
+          ],
+          color: "#eab308"
+        },
+        {
+          id: "pot-4",
+          nombre: "Potrero Bajo (Pastizal)",
+          cultivo: "Pastizal Natural",
+          fechaSiembra: "Autóctono",
+          estado: "En Pastoreo",
+          coords: [
+            [-38.4715, -63.1180],
+            [-38.4715, -63.1090],
+            [-38.4765, -63.1090],
+            [-38.4765, -63.1180]
+          ],
+          color: "#a855f7"
+        }
+      ],
+      rodeos: [
+        { id: "rod-1", nombre: "Lote Vaquillonas Angus", categoria: "Vaquillonas 2A", cabezas: 250, potreroId: "pot-1", diasEnCuadro: 6 },
+        { id: "rod-2", nombre: "Lote Novillos Recría", categoria: "Novillos Recría", cabezas: 200, potreroId: "pot-4", diasEnCuadro: 12 },
+        { id: "rod-3", nombre: "Lote Vacas de Cría", categoria: "Vacas c/ Cría", cabezas: 150, potreroId: "pot-2", diasEnCuadro: 2 }
+      ]
+    };
+
+    // --- VARIABLES DE NAVEGACIÓN Y MAPA ---
+    let map = null;
+    let polygonGroup = null;
+    let markerGroup = null;
+    let isSatellite = true;
+    let tileLayer = null;
+    let activeRodeoIdToMove = null;
+
+    // Capas Leaflet
+    const SATELLITE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    const STREETS_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+    // --- INICIALIZACIÓN GENERAL AL CARGAR PÁGINA ---
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      renderCuadrosTab();
+      renderRodeosTab();
+      startTelemetrySimulation();
+    });
+
+    // --- INICIALIZACIÓN DEL MAPA LEAFLET ---
+    function initMap() {
+      if (map) {
+        map.remove();
+      }
+
+      // Crear Mapa en -38.470694, -63.123916 con zoom 14
+      map = L.map('map', {
+        center: CAMPO_CENTER,
+        zoom: 14,
+        zoomControl: true
+      });
+
+      // Capa Satelital ESRI
+      tileLayer = L.tileLayer(SATELLITE_URL, {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 18
+      }).addTo(map);
+
+      polygonGroup = L.layerGroup().addTo(map);
+      markerGroup = L.layerGroup().addTo(map);
+
+      // Dibujar elementos iniciales
+      renderMapPolygons();
+    }
+
+    // Centrar mapa
+    function centerField() {
+      if (map) {
+        map.setView(CAMPO_CENTER, 14);
+      }
+    }
+
+    // Alternar capa de mapa
+    function toggleMapLayer() {
+      if (!map) return;
+      map.removeLayer(tileLayer);
+      if (isSatellite) {
+        tileLayer = L.tileLayer(STREETS_URL, { attribution: '&copy; OpenStreetMap' }).addTo(map);
+        document.getElementById('map-layer-label').innerText = "Mapa de Calles / Topográfico";
+        isSatellite = false;
+      } else {
+        tileLayer = L.tileLayer(SATELLITE_URL, { attribution: 'Esri Satellite' }).addTo(map);
+        document.getElementById('map-layer-label').innerText = "Vista Satelital HD";
+        isSatellite = true;
+      }
+    }
+
+    // Renderizar Polígonos y Marcadores en el Mapa
+    function renderMapPolygons() {
+      if (!map || !polygonGroup || !markerGroup) return;
+
+      polygonGroup.clearLayers();
+      markerGroup.clearLayers();
+
+      // Marcador central del casco / base BLASFER
+      const hqIcon = L.divIcon({
+        className: 'custom-hq-icon',
+        html: `<div class="bg-emerald-500 text-slate-950 font-bold p-1.5 rounded-full border-2 border-white shadow-xl flex items-center justify-center w-7 h-7"><i class="fa-solid fa-tower-cell text-xs"></i></div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+      L.marker(CAMPO_CENTER, { icon: hqIcon })
+        .bindPopup(`
+          <div class="p-1">
+            <p class="font-bold text-emerald-400 text-xs">ESTACIÓN BASE LORAWAN BLASFER</p>
+            <p class="text-[11px] text-slate-300">Coordenadas: -38.470694, -63.123916</p>
+            <p class="text-[10px] text-slate-400 mt-1">Cobertura: 15 km a la redonda</p>
+          </div>
+        `)
+        .addTo(markerGroup);
+
+      // Dibujar Potreros
+      fieldData.potreros.forEach(pot => {
+        const polygon = L.polygon(pot.coords, {
+          color: pot.color,
+          fillColor: pot.color,
+          fillOpacity: 0.25,
+          weight: 2
+        }).addTo(polygonGroup);
+
+        // Rodeos en este potrero
+        const rodeosEnPotrero = fieldData.rodeos.filter(r => r.potreroId === pot.id);
+        let rodeosText = rodeosEnPotrero.map(r => `• ${r.nombre} (${r.cabezas} cab)`).join('<br>') || '<i>Sin hacienda actualmente</i>';
+
+        polygon.bindPopup(`
+          <div class="p-2 space-y-1">
+            <h4 class="font-bold text-white text-sm border-b border-slate-700 pb-1">${pot.nombre}</h4>
+            <p class="text-xs text-slate-300"><b>Pastura:</b> ${pot.cultivo}</p>
+            <p class="text-xs text-slate-300"><b>Estado:</b> <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-emerald-400">${pot.estado}</span></p>
+            <div class="pt-1 text-xs text-slate-400">
+              <b class="text-slate-200">Hacienda presente:</b><br>${rodeosText}
+            </div>
+          </div>
+        `);
+
+        // Si el potrero tiene rodeo, simulamos marcadores de caravanas LoRaWAN adentro
+        if (rodeosEnPotrero.length > 0) {
+          const bounds = polygon.getBounds();
+          const center = bounds.getCenter();
+
+          // Marcador de rodeo principal
+          const cowIcon = L.divIcon({
+            className: 'custom-cow-icon',
+            html: `<div class="bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full border border-white shadow-lg flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-cow"></i> ${rodeosEnPotrero[0].cabezas} cab</div>`,
+            iconAnchor: [30, 10]
+          });
+
+          L.marker(center, { icon: cowIcon }).addTo(markerGroup);
+        }
+      });
+    }
+
+    // --- CAMBIO DE PESTAÑAS (TABS) ---
+    function switchTab(tabName) {
+      const tabs = ['mapa', 'cuadros', 'rodeos', 'telemetria'];
+      tabs.forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${t}`);
+        navBtn.classList.remove('bg-emerald-600', 'text-white', 'shadow-md');
+        navBtn.classList.add('text-slate-400');
+      });
+
+      // Activar la seleccionada
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`nav-${tabName}`);
+      activeBtn.classList.add('bg-emerald-600', 'text-white', 'shadow-md');
+      activeBtn.classList.remove('text-slate-400');
+
+      if (tabName === 'mapa' && map) {
+        setTimeout(() => map.invalidateSize(), 200);
+      }
+    }
+
+    // --- RENDER TAB CUADROS & PASTURAS ---
+    function renderCuadrosTab() {
+      const grid = document.getElementById('potreros-grid');
+      grid.innerHTML = '';
+
+      fieldData.potreros.forEach(pot => {
+        const rodeos = fieldData.rodeos.filter(r => r.potreroId === pot.id);
+        const totalCab = rodeos.reduce((acc, r) => acc + r.cabezas, 0);
+
+        let badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+        if (pot.estado === 'En Descanso') badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+        if (pot.estado === 'Listo para Ingreso') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-900 rounded-xl border border-slate-800 p-4 space-y-3 flex flex-col justify-between";
+        card.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex justify-between items-start">
+              <h3 class="font-bold text-white text-base">${pot.nombre}</h3>
+              <span class="px-2 py-0.5 text-[11px] font-semibold border rounded-full ${badgeColor}">
+                ${pot.estado}
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-seedling text-emerald-400"></i> ${pot.cultivo}
+            </p>
+            <p class="text-[11px] text-slate-400 font-mono">Siembra / Implantación: ${pot.fechaSiembra}</p>
+          </div>
+
+          <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
             <div>
-                <h2 id="page-title" class="text-lg font-bold text-white flex items-center gap-2">
-                    <i data-lucide="map-pin" class="text-emerald-400 w-5 h-5"></i> Panel General Agrícola y Ganadero
-                </h2>
-                <p class="text-xs text-slate-400">Rotación de Pastoreo, Estado de Cuadros y Rastreo de Hacienda en Tiempo Real</p>
+              <p class="text-slate-400">Hacienda en Cuadro</p>
+              <p class="font-bold text-white text-sm">${totalCab} <span class="text-xs font-normal text-slate-400">cabezas</span></p>
             </div>
+            <button onclick="switchTab('mapa')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 text-[11px]">
+              Ver en Mapa
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
 
-            <!-- Botones de Acción -->
-            <div class="flex items-center gap-2 flex-wrap">
-                <button onclick="openModal('modal-potrero')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-950/50 transition">
-                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Crear Cuadro
-                </button>
-                <button onclick="openModal('modal-mover')" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-amber-950/50 transition">
-                    <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Rotar / Mover Rodeo
-                </button>
-                <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-slate-700">
-                    <i data-lucide="download" class="w-4 h-4"></i> Guardar JSON
-                </button>
-                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-slate-700 cursor-pointer">
-                    <i data-lucide="upload" class="w-4 h-4"></i> Cargar JSON
-                    <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
-                </label>
-            </div>
-        </header>
+      document.getElementById('kpi-potreros-count').innerText = `${fieldData.potreros.length} cuadros`;
+    }
 
-        <!-- Cuerpo Dinámico -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    // --- RENDER TAB RODEOS & HACIENDA ---
+    function renderRodeosTab() {
+      const tbody = document.getElementById('rodeos-table-body');
+      tbody.innerHTML = '';
 
-            <!-- Métricas Clave (KPIs) -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 shadow-sm">
-                    <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Superficie Total</div>
-                    <div class="text-2xl font-black text-white mt-0.5" id="kpi-ha-total">1.250 Ha</div>
-                    <div class="text-[11px] text-slate-500" id="kpi-cuadros-cant">4 Cuadros Activos</div>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 shadow-sm">
-                    <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Cuadros Ocupados</div>
-                    <div class="text-2xl font-black text-amber-500 mt-0.5" id="kpi-cuadros-ocupados">2</div>
-                    <div class="text-[11px] text-slate-500">Con animales consumiendo</div>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 shadow-sm">
-                    <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Cuadros en Descanso</div>
-                    <div class="text-2xl font-black text-emerald-400 mt-0.5" id="kpi-cuadros-descanso">2</div>
-                    <div class="text-[11px] text-slate-500">Acumulando masa verde</div>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 shadow-sm">
-                    <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Hacienda Monitoreada</div>
-                    <div class="text-2xl font-black text-white mt-0.5" id="kpi-total-cabezas">600 Cab.</div>
-                    <div class="text-[11px] text-emerald-400 font-semibold" id="kpi-rodeos-cant">3 Rodeos asignados</div>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 shadow-sm col-span-2 md:col-span-1">
-                    <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Estado de Alertas</div>
-                    <div class="text-sm font-extrabold text-emerald-400 mt-1 flex items-center gap-1.5" id="kpi-alerta-box">
-                        <i data-lucide="shield-check" class="w-4 h-4"></i> Red Operativa 100%
-                    </div>
-                    <div class="text-[11px] text-slate-400 mt-0.5">Sin perimetrales rotas</div>
-                </div>
-            </div>
+      let totalCabezas = 0;
 
-            <!-- PESTAÑA: MAPA Y ROTACIÓN -->
-            <div id="tab-mapa" class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-250px)]">
-                <!-- Mapa Satelital Interactivo -->
-                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col h-full shadow-lg">
-                    <div class="flex items-center justify-between mb-2 px-1">
-                        <div class="text-xs font-bold text-slate-300 flex items-center gap-2">
-                            <span>🗺️ Geocercas e Ubicación en Tiempo Real</span>
-                            <span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full font-medium">Satélite ArcGIS</span>
-                        </div>
-                        <div class="text-xs text-slate-400 flex items-center gap-3">
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> En Descanso</span>
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> En Pastoreo</span>
-                        </div>
-                    </div>
-                    <!-- Lienzo del Mapa -->
-                    <div id="map" class="w-full flex-1 rounded-xl z-10 border border-slate-800"></div>
-                </div>
+      fieldData.rodeos.forEach(rod => {
+        totalCabezas += rod.cabezas;
+        const potrero = fieldData.potreros.find(p => p.id === rod.potreroId);
+        const potreroNombre = potrero ? potrero.nombre : 'Sin Asignar';
 
-                <!-- Panel Lateral de Monitoreo de Pasturas -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col h-full overflow-hidden shadow-lg">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3 shrink-0">
-                        <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                            <i data-lucide="rotate-cw" class="text-amber-500 w-4 h-4"></i> Monitoreo de Cuadros y Pasto
-                        </h3>
-                        <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded-md font-bold">Pastoreo Rotativo</span>
-                    </div>
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/30 transition-colors";
+        tr.innerHTML = `
+          <td class="p-3.5 font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-cow text-emerald-400"></i> ${rod.nombre}
+          </td>
+          <td class="p-3.5 text-slate-300">${rod.categoria}</td>
+          <td class="p-3.5 text-center font-mono font-bold text-emerald-400">${rod.cabezas}</td>
+          <td class="p-3.5 text-slate-300">${potreroNombre}</td>
+          <td class="p-3.5 font-mono text-slate-400">${rod.diasEnCuadro} días</td>
+          <td class="p-3.5 text-right">
+            <button onclick="openModalMover('${rod.id}')" class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded font-medium text-[11px] transition-colors">
+              <i class="fa-solid fa-arrows-rotate"></i> Rotar Potrero
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-                    <!-- Lista de Cuadros -->
-                    <div class="flex-1 overflow-y-auto space-y-3 pr-1" id="potreros-list-cards">
-                        <!-- Generado por JS -->
-                    </div>
-                </div>
-            </div>
+      document.getElementById('kpi-total-cabeza').innerText = `${totalCabezas} caravanas`;
+    }
 
-            <!-- PESTAÑA: DETALLE DE POTREROS -->
-            <div id="tab-potreros" class="hidden space-y-4">
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="font-bold text-lg text-white">Administración Agrícola de Lotes / Cuadros</h3>
-                            <p class="text-xs text-slate-400">Gestión de cultivos, fechas de siembra y cálculo de recuperación de masa verde</p>
-                        </div>
-                        <button onclick="openModal('modal-potrero')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
-                            + Cargar Cuadro Manual
-                        </button>
-                    </div>
+    // --- MODAL DE ROTACIÓN / MOVIMIENTO ---
+    function openModalMover(rodeoId) {
+      activeRodeoIdToMove = rodeoId;
+      const rodeo = fieldData.rodeos.find(r => r.id === rodeoId);
+      if (!rodeo) return;
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-300">
-                            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
-                                <tr>
-                                    <th class="p-3.5">Nombre Cuadro</th>
-                                    <th class="p-3.5">Superficie</th>
-                                    <th class="p-3.5">Cultivo / Pastura</th>
-                                    <th class="p-3.5">Fecha Siembra</th>
-                                    <th class="p-3.5">Antigüedad Siembra</th>
-                                    <th class="p-3.5">Rodeo Actual</th>
-                                    <th class="p-3.5">Estado</th>
-                                    <th class="p-3.5 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-potreros-body" class="divide-y divide-slate-800/60">
-                                <!-- Generado por JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+      document.getElementById('mover-rodeo-nombre').value = `${rodeo.nombre} (${rodeo.cabezas} cabezas)`;
+      
+      const selectDestino = document.getElementById('mover-potrero-destino');
+      selectDestino.innerHTML = '';
 
-            <!-- PESTAÑA: RODEOS -->
-            <div id="tab-rodeos" class="hidden space-y-4">
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="font-bold text-lg text-white">Gestión de Rodeos de Hacienda</h3>
-                            <p class="text-xs text-slate-400">Asignación de caravanas LoRaWAN y lotes de carga animal</p>
-                        </div>
-                        <button onclick="openModal('modal-rodeo')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition">
-                            + Crear Nuevo Rodeo
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="rodeos-cards-container">
-                        <!-- Generado por JS -->
-                    </div>
-                </div>
-            </div>
+      fieldData.potreros.forEach(pot => {
+        const isCurrent = pot.id === rodeo.potreroId;
+        const option = document.createElement('option');
+        option.value = pot.id;
+        option.innerText = `${pot.nombre} [${pot.estado}] ${isCurrent ? '(Actual)' : ''}`;
+        if (isCurrent) option.disabled = true;
+        selectDestino.appendChild(option);
+      });
 
-            <!-- PESTAÑA: TELEMETRÍA LORAWAN -->
-            <div id="tab-lora" class="hidden space-y-4">
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-                    <div>
-                        <h3 class="font-bold text-lg text-white flex items-center gap-2">
-                            <i data-lucide="radio" class="text-emerald-400"></i> Consola de Telemetría LoRaWAN BLASFER
-                        </h3>
-                        <p class="text-xs text-slate-400">Recepción de paquetes de geolocalización GPS e indicadores de salud animal en tiempo real</p>
-                    </div>
+      document.getElementById('modal-mover').classList.remove('hidden');
+    }
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                            <div class="text-xs text-slate-400">Gateway Principal Base</div>
-                            <div class="text-base font-bold text-white mt-1">BLASFER-GW-AU915-01</div>
-                            <div class="text-xs text-emerald-400 mt-2 font-medium flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block pulse-dot"></span> Operativo - Frecuencia 915 MHz
-                            </div>
-                        </div>
-                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                            <div class="text-xs text-slate-400">Paquetes GPS Recibidos Hoy</div>
-                            <div class="text-2xl font-black text-white mt-1" id="lora-packets-count">18.420</div>
-                            <div class="text-xs text-slate-500 mt-1">99.98% de tasa de entrega sin pérdidas</div>
-                        </div>
-                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                            <div class="text-xs text-slate-400">Estado Baterías Caravanas</div>
-                            <div class="text-2xl font-black text-emerald-400 mt-1">98.4% Prom.</div>
-                            <div class="text-xs text-slate-500 mt-1">Autonomía asistida por micro panel fotovoltaico</div>
-                        </div>
-                    </div>
+    function closeModalMover() {
+      document.getElementById('modal-mover').classList.add('hidden');
+      activeRodeoIdToMove = null;
+    }
 
-                    <!-- Terminal de Registro en Vivo -->
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300">
-                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3 text-slate-400">
-                            <span>REGISTRO EN VIVO DE DISPOSITIVOS (CONSOLA DE RED)</span>
-                            <span class="text-[10px] text-emerald-400 font-bold">● TRANSMITIENDO</span>
-                        </div>
-                        <div class="space-y-2 h-48 overflow-y-auto pr-2" id="lora-live-log">
-                            <!-- Inserción dinámica por JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
+    function confirmarMovimiento() {
+      if (!activeRodeoIdToMove) return;
 
-        </div>
-    </main>
+      const nuevoPotreroId = document.getElementById('mover-potrero-destino').value;
+      const rodeo = fieldData.rodeos.find(r => r.id === activeRodeoIdToMove);
 
-    <!-- MODAL: NUEVO / EDITAR POTRERO -->
-    <div id="modal-potrero" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-white text-base">Cargar / Definir Cuadro de Campo</h3>
-                <button onclick="closeModal('modal-potrero')" class="text-slate-400 hover:text-white text-lg">✕</button>
-            </div>
-            <form id="form-potrero" onsubmit="savePotrero(event)" class="space-y-3.5 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1 font-medium">Nombre o Identificación del Cuadro</label>
-                    <input type="text" id="p-nombre" required placeholder="Ej: Cuadro 5 - La Laguna" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Superficie (Hectáreas)</label>
-                        <input type="number" step="0.1" id="p-ha" required placeholder="Ej: 180" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Cultivo / Pastura</label>
-                        <select id="p-cultivo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                            <option value="Alfalfa">Alfalfa</option>
-                            <option value="Raigrás">Raigrás</option>
-                            <option value="Verdeo de Invierno">Verdeo de Invierno</option>
-                            <option value="Pastizal Natural">Pastizal Natural</option>
-                            <option value="Maíz">Maíz</option>
-                            <option value="Trigo">Trigo</option>
-                            <option value="Soja">Soja</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Fecha Siembra / Implantación</label>
-                        <input type="date" id="p-fecha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Días Descanso Recomendados</label>
-                        <input type="number" id="p-descanso" value="35" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                </div>
-                <div class="pt-3 flex justify-end gap-2">
-                    <button type="button" onclick="closeModal('modal-potrero')" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700 transition">Cancelar</button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-950/50">Guardar Cuadro</button>
-                </div>
-            </form>
-        </div>
-    </div>
+      if (rodeo && nuevoPotreroId) {
+        rodeo.potreroId = nuevoPotreroId;
+        rodeo.diasEnCuadro = 1; // Reiniciar contador de días
 
-    <!-- MODAL: CREAR RODEO -->
-    <div id="modal-rodeo" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-white text-base">Crear / Registrar Nuevo Rodeo</h3>
-                <button onclick="closeModal('modal-rodeo')" class="text-slate-400 hover:text-white text-lg">✕</button>
-            </div>
-            <form id="form-rodeo" onsubmit="saveRodeo(event)" class="space-y-3.5 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1 font-medium">Nombre del Rodeo / Lote</label>
-                    <input type="text" id="r-nombre" required placeholder="Ej: Rodeo #4 - Terneros Destete" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Cantidad de Cabezas</label>
-                        <input type="number" id="r-cabezas" required placeholder="Ej: 150" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-medium">Categoría Ganadera</label>
-                        <select id="r-categoria" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
-                            <option value="Vaca de Cría">Vaca de Cría</option>
-                            <option value="Recría">Recría</option>
-                            <option value="Vaquillona">Vaquillona</option>
-                            <option value="Novillo">Novillo</option>
-                            <option value="Toro">Toro</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="pt-3 flex justify-end gap-2">
-                    <button type="button" onclick="closeModal('modal-rodeo')" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700 transition">Cancelar</button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-lg shadow-emerald-950/50">Crear Rodeo</button>
-                </div>
-            </form>
-        </div>
-    </div>
+        // Actualizar interfaz completa
+        renderRodeosTab();
+        renderCuadrosTab();
+        renderMapPolygons();
+        closeModalMover();
 
-    <!-- MODAL: MOVER RODEO -->
-    <div id="modal-mover" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-white text-base">Rotación: Mover Rodeo entre Cuadros</h3>
-                <button onclick="closeModal('modal-mover')" class="text-slate-400 hover:text-white text-lg">✕</button>
-            </div>
-            <form id="form-mover" onsubmit="saveMovimiento(event)" class="space-y-3.5 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1 font-medium">Seleccionar Rodeo / Lote de Animales</label>
-                    <select id="m-rodeo" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500">
-                        <!-- Generado por JS -->
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1 font-medium">Cuadro de Destino</label>
-                    <select id="m-destino" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500">
-                        <!-- Generado por JS -->
-                    </select>
-                </div>
-                <div class="p-3 bg-amber-950/40 border border-amber-800/50 rounded-xl text-amber-300 text-[11px] flex items-start gap-2 leading-relaxed">
-                    <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                    <span>Al trasladar la hacienda, el cuadro liberado iniciará de forma automática el cálculo de días de descanso para la recuperación de la pastura.</span>
-                </div>
-                <div class="pt-3 flex justify-end gap-2">
-                    <button type="button" onclick="closeModal('modal-mover')" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700 transition">Cancelar</button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition shadow-lg shadow-amber-950/50">Registrar Mover</button>
-                </div>
-            </form>
-        </div>
-    </div>
+        // Feed log de telemetría
+        appendTelemetryLog(`[ROTACIÓN EXITOSA] ${rodeo.nombre} movido a potrero ID: ${nuevoPotreroId}`);
+      }
+    }
 
-    <!-- Lógica JavaScript de la Aplicación -->
-    <script>
-        // Datos Iniciales del Campo (Ubicación en Argentina - Córdoba/La Pampa)
-        let potreros = [
-            {
-                id: 1,
-                nombre: "Cuadro 1 - El Mirador",
-                ha: 220,
-                cultivo: "Alfalfa",
-                fechaSiembra: "2024-03-15",
-                diasDescansoReq: 30,
-                diasEnPastoreo: 12,
-                rodeoId: 1,
-                coords: [
-                    [-33.840, -64.520],
-                    [-33.840, -64.500],
-                    [-33.850, -64.500],
-                    [-33.850, -64.520]
-                ]
-            },
-            {
-                id: 2,
-                nombre: "Cuadro 2 - La Alfalfa",
-                ha: 180,
-                cultivo: "Raigrás",
-                fechaSiembra: "2024-04-02",
-                diasDescansoReq: 35,
-                diasEnPastoreo: 5,
-                rodeoId: 2,
-                coords: [
-                    [-33.840, -64.500],
-                    [-33.840, -64.480],
-                    [-33.850, -64.480],
-                    [-33.850, -64.500]
-                ]
-            },
-            {
-                id: 3,
-                nombre: "Cuadro 3 - Bajo Norte",
-                ha: 310,
-                cultivo: "Pastizal Natural",
-                fechaSiembra: "2023-10-10",
-                diasDescansoReq: 25,
-                diasEnPastoreo: 0,
-                rodeoId: null,
-                coords: [
-                    [-33.850, -64.520],
-                    [-33.850, -64.490],
-                    [-33.865, -64.490],
-                    [-33.865, -64.520]
-                ]
-            },
-            {
-                id: 4,
-                nombre: "Cuadro 4 - El Verdeo",
-                ha: 200,
-                cultivo: "Verdeo de Invierno",
-                fechaSiembra: "2024-05-10",
-                diasDescansoReq: 28,
-                diasEnPastoreo: 0,
-                rodeoId: null,
-                coords: [
-                    [-33.850, -64.490],
-                    [-33.850, -64.470],
-                    [-33.865, -64.470],
-                    [-33.865, -64.490]
-                ]
-            }
-        ];
+    // --- SIMULADOR DE TELEMETRÍA LORAWAN EN VIVO ---
+    function startTelemetrySimulation() {
+      const logContainer = document.getElementById('telemetry-log');
+      
+      const sampleDevEuis = ["38A4B1002200", "38A4B1002201", "38A4B1002202", "38A4B1002203", "38A4B1002204"];
+      
+      setInterval(() => {
+        if (document.getElementById('tab-telemetria').classList.contains('hidden')) return;
 
-        let rodeos = [
-            { id: 1, nombre: "Rodeo #1 - Vacas Angus Preñadas", cabezas: 250, categoria: "Vaca de Cría", caravanasLora: 250 },
-            { id: 2, nombre: "Rodeo #2 - Novillitos Recría", cabezas: 200, categoria: "Recría", caravanasLora: 200 },
-            { id: 3, nombre: "Rodeo #3 - Vaquillonas Reposición", cabezas: 150, categoria: "Vaquillona", caravanasLora: 150 }
-        ];
+        const randomDev = sampleDevEuis[Math.floor(Math.random() * sampleDevEuis.length)];
+        const rssi = -90 - Math.floor(Math.random() * 15);
+        const snr = (7 + Math.random() * 4).toFixed(1);
+        const bat = (3.8 + Math.random() * 0.4).toFixed(2);
 
-        let map;
-        let mapLayers = [];
+        const logLine = `[${new Date().toLocaleTimeString()}] UPLINK DevEUI: ${randomDev} | RSSI: ${rssi} dBm | SNR: +${snr} dB | Bat: ${bat}V (Solar OK) | GPS Fix: OK`;
+        appendTelemetryLog(logLine);
+      }, 2500);
+    }
 
-        // Inicialización de la App
-        document.addEventListener("DOMContentLoaded", () => {
-            // Establecer fecha por defecto a hoy
-            document.getElementById('p-fecha').value = new Date().toISOString().split('T')[0];
-            
-            initMap();
-            renderUI();
-            startTelemetrySimulation();
-            lucide.createIcons();
-        });
+    function appendTelemetryLog(text) {
+      const logContainer = document.getElementById('telemetry-log');
+      if (!logContainer) return;
 
-        // Configuración del Mapa
-        function initMap() {
-            map = L.map('map').setView([-33.852, -64.495], 13);
+      const p = document.createElement('p');
+      p.className = "text-slate-300 hover:text-emerald-300 transition-colors";
+      p.innerText = text;
+      logContainer.prepend(p);
 
-            // Capa Satelital ESRI
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'BLASFER LoRaWAN | Esri Satellite'
-            }).addTo(map);
+      if (logContainer.children.length > 40) {
+        logContainer.removeChild(logContainer.lastChild);
+      }
+    }
 
-            // Grupo de Capas para Dibujar
-            const drawnItems = new L.FeatureGroup();
-            map.addLayer(drawnItems);
+    // --- IMPORTAR / EXPORTAR DATOS DEL ESTABLECIMIENTO ---
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fieldData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `BLASFER_Campo_Backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
 
-            const drawControl = new L.Control.Draw({
-                draw: {
-                    polygon: {
-                        shapeOptions: { color: '#4caf50', fillColor: '#4caf50', fillOpacity: 0.4 }
-                    },
-                    rectangle: {
-                        shapeOptions: { color: '#4caf50', fillColor: '#4caf50', fillOpacity: 0.4 }
-                    },
-                    circle: false,
-                    polyline: false,
-                    marker: false,
-                    circlemarker: false
-                },
-                edit: { featureGroup: drawnItems }
-            });
-            map.addControl(drawControl);
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-            // Manejar Polígonos Creados por el Usuario
-            map.on(L.Draw.Event.CREATED, function (e) {
-                const layer = e.layer;
-                drawnItems.addLayer(layer);
-                const latLngs = layer.getLatLngs()[0].map(ll => [ll.lat, ll.lng]);
-                
-                // Calcular superficie aproximada en Hectáreas
-                const areaHa = Math.round((L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]) / 10000) * 10) / 10;
-                
-                document.getElementById('p-nombre').value = `Cuadro #${potreros.length + 1} - Lote Dibujado`;
-                document.getElementById('p-ha').value = areaHa > 0 ? areaHa : 100;
-                document.getElementById('form-potrero').dataset.tempCoords = JSON.stringify(latLngs);
-                
-                openModal('modal-potrero');
-            });
-
-            drawPotrerosOnMap();
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.potreros && parsed.rodeos) {
+            fieldData = parsed;
+            renderCuadrosTab();
+            renderRodeosTab();
+            renderMapPolygons();
+            alert("¡Datos del establecimiento BLASFER cargados correctamente!");
+          } else {
+            alert("El archivo no tiene la estructura válida de BLASFER.");
+          }
+        } catch (err) {
+          alert("Error al procesar el archivo JSON.");
         }
+      };
+      reader.readAsText(file);
+    }
 
-        // Dibujar Polígonos y Marcadores de Hacienda
-        function drawPotrerosOnMap() {
-            mapLayers.forEach(l => map.removeLayer(l));
-            mapLayers = [];
-
-            potreros.forEach(p => {
-                const rodeo = rodeos.find(r => r.id === p.rodeoId);
-                const isOccupied = rodeo !== undefined;
-                const strokeColor = isOccupied ? '#f57c00' : '#2e7d32';
-
-                const polygon = L.polygon(p.coords, {
-                    color: strokeColor,
-                    fillColor: strokeColor,
-                    fillOpacity: 0.4,
-                    weight: 2
-                }).addTo(map);
-
-                const statusTag = isOccupied 
-                    ? `<span style="color:#f57c00; font-weight:bold;">● EN PASTOREO (${rodeo.nombre})</span>` 
-                    : `<span style="color:#4caf50; font-weight:bold;">● EN DESCANSO</span>`;
-
-                polygon.bindPopup(`
-                    <div style="color: #0f172a; font-family: sans-serif; font-size: 12px; line-height: 1.5;">
-                        <strong style="font-size: 14px; color: #1b5e20;">${p.nombre}</strong><br>
-                        <b>Superficie:</b> ${p.ha} Ha<br>
-                        <b>Pastura:</b> ${p.cultivo}<br>
-                        <b>Estado:</b> ${statusTag}
-                    </div>
-                `);
-
-                mapLayers.push(polygon);
-
-                // Agregar Marcador de Hacienda si está ocupado
-                if(isOccupied) {
-                    const center = polygon.getBounds().getCenter();
-                    
-                    const cattleIcon = L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="background-color:#111827; border:2px solid #f57c00; color:#fff; padding:3px 8px; border-radius:12px; font-size:10px; font-weight:bold; white-space:nowrap; box-shadow:0 4px 6px rgba(0,0,0,0.4);" class="flex items-center gap-1">
-                                📡 ${rodeo.cabezas} Cab.
-                               </div>`,
-                        iconSize: [80, 24],
-                        iconAnchor: [40, 12]
-                    });
-
-                    const marker = L.marker(center, { icon: cattleIcon }).addTo(map);
-                    marker.bindTooltip(`Rodeo: ${rodeo.nombre} | ${rodeo.caravanasLora} Caravanas Activas`, { direction: 'top' });
-                    mapLayers.push(marker);
-                }
-            });
-        }
-
-        // Renderizar la Interfaz
-        function renderUI() {
-            renderPotrerosCards();
-            renderPotrerosTable();
-            renderRodeos();
-            updateKPIs();
-            populateSelects();
-        }
-
-        // Tarjetas Laterales de Rotación
-        function renderPotrerosCards() {
-            const container = document.getElementById('potreros-list-cards');
-            container.innerHTML = '';
-
-            potreros.forEach(p => {
-                const rodeo = rodeos.find(r => r.id === p.rodeoId);
-                const isOccupied = rodeo !== undefined;
-                const diasSiembra = calculateDaysSince(p.fechaSiembra);
-
-                const card = document.createElement('div');
-                card.className = `p-3.5 rounded-xl border transition ${isOccupied ? 'bg-amber-950/20 border-amber-800/60' : 'bg-slate-950/60 border-slate-800'}`;
-                
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-xs text-white flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full ${isOccupied ? 'bg-amber-500' : 'bg-emerald-400'}"></span>
-                            ${p.nombre}
-                        </span>
-                        <span class="text-[10px] px-2 py-0.5 rounded-md font-extrabold ${isOccupied ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
-                            ${isOccupied ? 'EN PASTOREO' : 'EN DESCANSO'}
-                        </span>
-                    </div>
-                    <div class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
-                        <span>🌱 ${p.cultivo} (${p.ha} Ha)</span>
-                        <span>📅 ${diasSiembra} días siembra</span>
-                    </div>
-                    <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                        <span class="text-slate-300">
-                            ${isOccupied ? `🐮 <b>${rodeo.nombre}</b>` : `🔄 ${p.diasDescansoReq} días descanso req.`}
-                        </span>
-                        <button onclick="openMoverPara('${p.id}')" class="text-amber-400 hover:text-amber-300 font-bold text-[10px] bg-amber-950/50 hover:bg-amber-900/60 px-2 py-1 rounded-md border border-amber-800/40 transition">
-                            Rotar Aquí
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // Tabla de Potreros
-        function renderPotrerosTable() {
-            const body = document.getElementById('table-potreros-body');
-            body.innerHTML = '';
-
-            potreros.forEach(p => {
-                const rodeo = rodeos.find(r => r.id === p.rodeoId);
-                const diasSiembra = calculateDaysSince(p.fechaSiembra);
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-800/30 transition";
-                tr.innerHTML = `
-                    <td class="p-3.5 font-bold text-white">${p.nombre}</td>
-                    <td class="p-3.5">${p.ha} Ha</td>
-                    <td class="p-3.5"><span class="bg-slate-800 border border-slate-700 px-2 py-1 rounded-md text-slate-300 font-medium">${p.cultivo}</span></td>
-                    <td class="p-3.5">${p.fechaSiembra}</td>
-                    <td class="p-3.5 text-slate-400">${diasSiembra} días</td>
-                    <td class="p-3.5 font-semibold text-amber-400">${rodeo ? rodeo.nombre : '—'}</td>
-                    <td class="p-3.5">
-                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold ${p.rodeoId ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
-                            ${p.rodeoId ? 'Ocupado' : 'Disponible / Descanso'}
-                        </span>
-                    </td>
-                    <td class="p-3.5 text-right">
-                        <button onclick="deletePotrero(${p.id})" class="text-red-400 hover:text-red-300 font-semibold text-xs">Eliminar</button>
-                    </td>
-                `;
-                body.appendChild(tr);
-            });
-        }
-
-        // Tarjetas de Rodeos
-        function renderRodeos() {
-            const container = document.getElementById('rodeos-cards-container');
-            container.innerHTML = '';
-
-            rodeos.forEach(r => {
-                const potrero = potreros.find(p => p.rodeoId === r.id);
-
-                const card = document.createElement('div');
-                card.className = "bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3 shadow-md";
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <h4 class="font-bold text-white text-sm">${r.nombre}</h4>
-                        <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">${r.categoria}</span>
-                    </div>
-                    <div class="text-xs text-slate-400 space-y-1.5 pt-1">
-                        <div class="flex justify-between"><span>Cantidad de Animales:</span> <b class="text-white">${r.cabezas} Cabezas</b></div>
-                        <div class="flex justify-between"><span>Caravanas LoRaWAN:</span> <b class="text-emerald-400">${r.caravanasLora} Activas</b></div>
-                        <div class="flex justify-between"><span>Ubicación Actual:</span> <b class="text-amber-400">${potrero ? potrero.nombre : 'Sin Asignar'}</b></div>
-                    </div>
-                    <button onclick="openModal('modal-mover')" class="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs py-2.5 rounded-xl font-bold transition border border-slate-700">
-                        Rotar Rodeo de Cuadro
-                    </button>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // Utilidades
-        function calculateDaysSince(dateString) {
-            const diffTime = Math.abs(new Date() - new Date(dateString));
-            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        }
-
-        function updateKPIs() {
-            const totalHa = potreros.reduce((sum, p) => sum + Number(p.ha), 0);
-            const ocupados = potreros.filter(p => p.rodeoId !== null).length;
-            const totalCabezas = rodeos.reduce((sum, r) => sum + Number(r.cabezas), 0);
-            
-            document.getElementById('kpi-ha-total').innerText = `${totalHa} Ha`;
-            document.getElementById('kpi-cuadros-cant').innerText = `${potreros.length} Cuadros Dibujados`;
-            document.getElementById('kpi-cuadros-ocupados').innerText = ocupados;
-            document.getElementById('kpi-cuadros-descanso').innerText = potreros.length - ocupados;
-            document.getElementById('kpi-total-cabezas').innerText = `${totalCabezas} Cab.`;
-            document.getElementById('kpi-rodeos-cant').innerText = `${rodeos.length} Rodeos monitoreados`;
-            document.getElementById('sidebar-total-caravanas').innerText = `${totalCabezas} Caravanas`;
-        }
-
-        function populateSelects() {
-            const selRodeo = document.getElementById('m-rodeo');
-            const selDestino = document.getElementById('m-destino');
-            
-            selRodeo.innerHTML = rodeos.map(r => `<option value="${r.id}">${r.nombre} (${r.cabezas} cab.)</option>`).join('');
-            selDestino.innerHTML = potreros.map(p => `<option value="${p.id}">${p.nombre} - ${p.cultivo} (${p.ha} Ha)</option>`).join('');
-        }
-
-        // Manejo de Pestañas
-        function switchTab(tab) {
-            ['mapa', 'potreros', 'rodeos', 'lora'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition font-semibold";
-            });
-
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.getElementById(`nav-${tab}`).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-950/40 transition font-semibold";
-
-            if(tab === 'mapa') {
-                setTimeout(() => map.invalidateSize(), 150);
-            }
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        function openMoverPara(potreroId) {
-            document.getElementById('m-destino').value = potreroId;
-            openModal('modal-mover');
-        }
-
-        function savePotrero(e) {
-            e.preventDefault();
-            const tempCoords = document.getElementById('form-potrero').dataset.tempCoords;
-            
-            let coords = tempCoords ? JSON.parse(tempCoords) : [
-                [-33.860, -64.510],
-                [-33.860, -64.490],
-                [-33.870, -64.490],
-                [-33.870, -64.510]
-            ];
-
-            const newP = {
-                id: Date.now(),
-                nombre: document.getElementById('p-nombre').value,
-                ha: Number(document.getElementById('p-ha').value),
-                cultivo: document.getElementById('p-cultivo').value,
-                fechaSiembra: document.getElementById('p-fecha').value,
-                diasDescansoReq: Number(document.getElementById('p-descanso').value),
-                diasEnPastoreo: 0,
-                rodeoId: null,
-                coords: coords
-            };
-
-            potreros.push(newP);
-            delete document.getElementById('form-potrero').dataset.tempCoords;
-            closeModal('modal-potrero');
-            document.getElementById('form-potrero').reset();
-            
-            drawPotrerosOnMap();
-            renderUI();
-        }
-
-        function saveRodeo(e) {
-            e.preventDefault();
-            const newR = {
-                id: Date.now(),
-                nombre: document.getElementById('r-nombre').value,
-                cabezas: Number(document.getElementById('r-cabezas').value),
-                categoria: document.getElementById('r-categoria').value,
-                caravanasLora: Number(document.getElementById('r-cabezas').value)
-            };
-
-            rodeos.push(newR);
-            closeModal('modal-rodeo');
-            document.getElementById('form-rodeo').reset();
-            renderUI();
-        }
-
-        function saveMovimiento(e) {
-            e.preventDefault();
-            const rodeoId = Number(document.getElementById('m-rodeo').value);
-            const potreroDestinoId = Number(document.getElementById('m-destino').value);
-
-            // Liberar cuadro anterior
-            potreros.forEach(p => {
-                if (p.rodeoId === rodeoId) p.rodeoId = null;
-            });
-
-            // Asignar a nuevo cuadro
-            const target = potreros.find(p => p.id === potreroDestinoId);
-            if (target) {
-                target.rodeoId = rodeoId;
-                target.diasEnPastoreo = 1;
-            }
-
-            closeModal('modal-mover');
-            drawPotrerosOnMap();
-            renderUI();
-        }
-
-        function deletePotrero(id) {
-            if (confirm("¿Deseas eliminar este cuadro de la estancia?")) {
-                potreros = potreros.filter(p => p.id !== id);
-                drawPotrerosOnMap();
-                renderUI();
-            }
-        }
-
-        // Exportar e Importar Datos
-        function exportData() {
-            const config = { potreros, rodeos };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", "estancia_blasfer_config.json");
-            dlAnchorElem.click();
-        }
-
-        function importData(event) {
-            const fileReader = new FileReader();
-            fileReader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if(parsed.potreros && parsed.rodeos) {
-                        potreros = parsed.potreros;
-                        rodeos = parsed.rodeos;
-                        drawPotrerosOnMap();
-                        renderUI();
-                        alert("¡Configuración del campo importada con éxito!");
-                    }
-                } catch(err) {
-                    alert("El archivo subido no contiene un formato JSON válido.");
-                }
-            };
-            fileReader.readAsText(event.target.files[0]);
-        }
-
-        // Simulación de Consola LoRaWAN en Vivo
-        function startTelemetrySimulation() {
-            const logContainer = document.getElementById('lora-live-log');
-            let packets = 18420;
-
-            setInterval(() => {
-                packets += Math.floor(Math.random() * 3) + 1;
-                document.getElementById('lora-packets-count').innerText = packets.toLocaleString();
-
-                const randomRodeo = rodeos[Math.floor(Math.random() * rodeos.length)];
-                const randomTag = Math.floor(Math.random() * 500) + 100;
-                const rssi = -Math.floor(Math.random() * 30 + 80);
-                const snr = (Math.random() * 8 + 4).toFixed(1);
-                const now = new Date().toLocaleTimeString();
-
-                const logEntry = document.createElement('div');
-                logEntry.className = "flex items-center justify-between border-b border-slate-900 pb-1";
-                logEntry.innerHTML = `
-                    <span class="text-emerald-400">[${now}] DEV-CARAVANA-#${randomTag}</span>
-                    <span class="text-slate-300">${randomRodeo ? randomRodeo.nombre : 'Rodeo #1'}</span>
-                    <span class="text-slate-500">RSSI: ${rssi} dBm | SNR: ${snr} dB</span>
-                    <span class="text-emerald-500 font-bold">ACK OK</span>
-                `;
-
-                logContainer.insertBefore(logEntry, logContainer.firstChild);
-
-                if (logContainer.children.length > 25) {
-                    logContainer.removeChild(logContainer.lastChild);
-                }
-            }, 3000);
-        }
-    </script>
+    function openModalAddPotrero() {
+      alert("Para agregar un potrero personalizado con coordenadas avanzadas, podés exportar el archivo JSON, agregar la lista de coordenadas y reimportarlo en un clic.");
+    }
+  </script>
 </body>
 </html>
