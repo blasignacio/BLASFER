@@ -1,798 +1,253 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-900 text-slate-100">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BLASFER - Soluciones IoT & Agrotech</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Tailwind Custom Config -->
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            blasfer: {
-              50: '#f0fdf4',
-              100: '#dcfce7',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d',
-              800: '#166534',
-              900: '#14532d',
-              dark: '#0d1f14',
-              card: '#13231a'
-            }
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLASFER — Control Integral Ganadero y Agrícola LoRaWAN</title>
+    <!-- CSS Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --danger: #ef4444;
+            --warning: #f59e0b;
         }
-      }
-    }
-  </script>
 
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
 
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+        .sidebar {
+            width: 280px;
+            background-color: #0b1329;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
 
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    /* Estilos personalizados para el mapa */
-    #map {
-      height: 100%;
-      width: 100%;
-      min-height: 480px;
-      z-index: 10;
-      border-radius: 0.75rem;
-    }
-    .leaflet-popup-content-wrapper {
-      background-color: #1e293b !important;
-      color: #f8fafc !important;
-      border: 1px solid #334155;
-      border-radius: 0.5rem;
-      font-family: 'Inter', sans-serif;
-    }
-    .leaflet-popup-tip {
-      background-color: #1e293b !important;
-    }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #22c55e;
-    }
-  </style>
+        .brand {
+            padding: 20px;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand span {
+            color: white;
+        }
+
+        .menu {
+            list-style: none;
+            padding: 15px 0;
+            flex-grow: 1;
+        }
+
+        .menu li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .menu li.active a, .menu li a:hover {
+            background-color: var(--card-bg);
+            color: var(--text-light);
+            border-left: 4px solid var(--primary);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 25px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 500;
+        }
+
+        header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--primary);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        #map {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(30, 41, 59, 0.95);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            z-index: 500;
+            backdrop-filter: blur(8px);
+            font-size: 13px;
+        }
+
+        .info-panel h3 {
+            font-size: 14px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .stat-item {
+            background: #0f172a;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .stat-item .val {
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+        }
+
+        .stat-item .lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
-<body class="h-full flex flex-col md:flex-row overflow-hidden bg-slate-950 text-slate-100">
+<body>
 
-  <!-- ================= SIDEBAR NAV ================= -->
-  <aside class="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between shrink-0 z-20">
-    <div>
-      <!-- Brand Logo Header -->
-      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center shadow-lg shadow-green-900/40">
-            <i class="fa-solid fa-tower-broadcast text-slate-950 text-xl"></i>
-          </div>
-          <div>
-            <h1 class="font-bold text-lg tracking-wider text-white flex items-center gap-1">
-              BLASFER <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">v3.2</span>
-            </h1>
-            <p class="text-xs text-slate-400 font-medium tracking-tight">Soluciones IoT & Agrotech</p>
-          </div>
+    <div class="sidebar">
+        <div class="brand">
+            📡 BLAS<span>FER</span>
         </div>
-      </div>
-
-      <!-- Navigation Links -->
-      <nav class="p-3 space-y-1">
-        <button onclick="switchTab('mapa')" id="nav-mapa" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-emerald-600 text-white shadow-md shadow-emerald-900/30">
-          <i class="fa-solid fa-map-location-dot w-5 text-center text-base"></i>
-          <span>Mapa & Rotación</span>
-        </button>
-
-        <button onclick="switchTab('cuadros')" id="nav-cuadros" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
-          <i class="fa-solid fa-vector-square w-5 text-center text-base"></i>
-          <span>Cuadros & Pasturas</span>
-        </button>
-
-        <button onclick="switchTab('rodeos')" id="nav-rodeos" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
-          <i class="fa-solid fa-cow w-5 text-center text-base"></i>
-          <span>Rodeos & Hacienda</span>
-        </button>
-
-        <button onclick="switchTab('telemetria')" id="nav-telemetria" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
-          <i class="fa-solid fa-signal w-5 text-center text-base"></i>
-          <span>Telemetría LoRaWAN</span>
-        </button>
-      </nav>
+        <ul class="menu">
+            <li class="active"><a href="#">🗺️ Mapa de Campo & Rotación</a></li>
+            <li><a href="#">🌾 Cuadros & Cultivos</a></li>
+            <li><a href="#">🐮 Rodeos & Hacienda</a></li>
+            <li><a href="#">📊 Telemetría LoRaWAN</a></li>
+        </ul>
+        <div style="padding: 15px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted);">
+            <div>Establecimiento: <b>Estancia BLASFER</b></div>
+            <div>Coordenadas: <b>-38.4706, -63.1239</b></div>
+        </div>
     </div>
 
-    <!-- Field & System Quick Info -->
-    <div class="p-4 border-t border-slate-800 bg-slate-900/50 space-y-3">
-      <div class="bg-slate-950/80 p-3 rounded-lg border border-slate-800">
-        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-          <span class="font-semibold text-slate-300">ESTABLECIMIENTO</span>
-          <span class="inline-flex items-center gap-1 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Activo</span>
-        </div>
-        <p class="text-sm font-bold text-white truncate">Estancia "La Esperanza"</p>
-        <p class="text-[11px] text-slate-400 font-mono mt-0.5">Lat: -38.47069 | Lng: -63.12391</p>
-      </div>
+    <div class="main-content">
+        <header>
+            <h1>Plataforma de Monitoreo Ganadero & Agrícola en Tiempo Real</h1>
+            <div class="status-badge">
+                <span class="dot"></span> Red LoRaWAN Activa (Gateway AU915)
+            </div>
+        </header>
 
-      <div class="flex gap-2 text-xs">
-        <button onclick="exportData()" class="flex-1 py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium transition-colors flex items-center justify-center gap-1">
-          <i class="fa-solid fa-download text-xs text-emerald-400"></i> Exportar
-        </button>
-        <button onclick="document.getElementById('importFile').click()" class="flex-1 py-2 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium transition-colors flex items-center justify-center gap-1">
-          <i class="fa-solid fa-upload text-xs text-blue-400"></i> Importar
-        </button>
-        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
-      </div>
-    </div>
-  </aside>
-
-  <!-- ================= MAIN CONTENT AREA ================= -->
-  <main class="flex-1 flex flex-col h-full overflow-y-auto bg-slate-950">
-    
-    <!-- Top KPI Status Bar -->
-    <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 px-6 py-3 grid grid-cols-2 sm:grid-cols-4 gap-4 shrink-0">
-      <div class="flex items-center space-x-3">
-        <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          <i class="fa-solid fa-cow text-lg"></i>
-        </div>
-        <div>
-          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Cabezas</p>
-          <p id="kpi-total-cabeza" class="text-lg font-bold text-white">600 <span class="text-xs font-normal text-slate-400">caravanas</span></p>
-        </div>
-      </div>
-
-      <div class="flex items-center space-x-3">
-        <div class="p-2.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-          <i class="fa-solid fa-border-all text-lg"></i>
-        </div>
-        <div>
-          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Potreros Activos</p>
-          <p id="kpi-potreros-count" class="text-lg font-bold text-white">4 <span class="text-xs font-normal text-slate-400">cuadros</span></p>
-        </div>
-      </div>
-
-      <div class="flex items-center space-x-3">
-        <div class="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-          <i class="fa-solid fa-satellite-dish text-lg"></i>
-        </div>
-        <div>
-          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Red LoRaWAN</p>
-          <p class="text-lg font-bold text-emerald-400 flex items-center gap-1.5">
-            100% <span class="text-xs text-slate-400 font-normal">Online</span>
-          </p>
-        </div>
-      </div>
-
-      <div class="flex items-center space-x-3">
-        <div class="p-2.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
-          <i class="fa-solid fa-battery-three-quarters text-lg"></i>
-        </div>
-        <div>
-          <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Batería Promedio</p>
-          <p class="text-lg font-bold text-white">94% <span class="text-xs text-slate-400 font-normal">(Solar OK)</span></p>
-        </div>
-      </div>
-    </header>
-
-    <!-- TAB 1: MAPA & ROTACIÓN -->
-    <section id="tab-mapa" class="flex-1 p-4 md:p-6 flex flex-col gap-4 h-full">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-        <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-map text-emerald-400"></i> Geocercas y Posicionamiento en Tiempo Real
-          </h2>
-          <p class="text-xs text-slate-400">Monitoreo de coordenadas exactas (-38.470694, -63.123916)</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="toggleMapLayer()" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg flex items-center gap-2">
-            <i class="fa-solid fa-layer-group text-emerald-400"></i> <span id="map-layer-label">Vista Satelital HD</span>
-          </button>
-          <button onclick="centerField()" class="px-3 py-1.5 text-xs font-medium bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-lg flex items-center gap-1.5">
-            <i class="fa-solid fa-crosshairs"></i> Centrar Campo
-          </button>
-        </div>
-      </div>
-
-      <!-- Map Container -->
-      <div class="flex-1 relative min-h-[450px] bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-inner">
         <div id="map"></div>
-        
-        <!-- Floating Live Alert Overlay -->
-        <div class="absolute top-4 right-4 z-[500] bg-slate-900/90 backdrop-blur-md p-3 rounded-xl border border-slate-800 shadow-2xl max-w-xs text-xs space-y-2">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-            <span class="font-bold text-slate-200 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Telemetría de Cerco
-            </span>
-            <span class="text-[10px] bg-emerald-900/50 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-700/50">OK</span>
-          </div>
-          <p class="text-slate-300">Todas las 600 caravanas se encuentran dentro de las geocercas programadas.</p>
+
+        <div class="info-panel">
+            <h3>📍 Telemetría de Campo en Vivo</h3>
+            <div>Ubicación: <b>Lat: -38.470694, Lng: -63.123916</b></div>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <div class="val">600</div>
+                    <div class="lbl">Caravanas Activas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="val" style="color: var(--primary);">100%</div>
+                    <div class="lbl">Cobertura LoRa</div>
+                </div>
+            </div>
         </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: CUADROS & PASTURAS -->
-    <section id="tab-cuadros" class="hidden flex-1 p-4 md:p-6 space-y-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-lg font-bold text-white">Administración de Potreros y Pasturas</h2>
-          <p class="text-xs text-slate-400">Estado agronómico, días de pastoreo y descansos del suelo</p>
-        </div>
-        <button onclick="openModalAddPotrero()" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-900/40 flex items-center gap-2">
-          <i class="fa-solid fa-plus"></i> Añadir Potrero
-        </button>
-      </div>
-
-      <!-- Potreros Grid -->
-      <div id="potreros-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Rendered via JS -->
-      </div>
-    </section>
-
-    <!-- TAB 3: RODEOS & HACIENDA -->
-    <section id="tab-rodeos" class="hidden flex-1 p-4 md:p-6 space-y-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-lg font-bold text-white">Rodeos y Control de Hacienda</h2>
-          <p class="text-xs text-slate-400">Asignación de lotes, caravanas LoRaWAN y rotación de cuadro</p>
-        </div>
-      </div>
-
-      <!-- Rodeos Table -->
-      <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
-              <tr>
-                <th class="p-3.5">Nombre del Rodeo</th>
-                <th class="p-3.5">Categoría</th>
-                <th class="p-3.5 text-center">Cabezas / Caravanas</th>
-                <th class="p-3.5">Potrero Actual</th>
-                <th class="p-3.5">Días en Cuadro</th>
-                <th class="p-3.5 text-right">Acción Rotación</th>
-              </tr>
-            </thead>
-            <tbody id="rodeos-table-body" class="divide-y divide-slate-800/60">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: TELEMETRÍA LORAWAN -->
-    <section id="tab-telemetria" class="hidden flex-1 p-4 md:p-6 space-y-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-lg font-bold text-white">Red LoRaWAN & Telemetría en Vivo</h2>
-          <p class="text-xs text-slate-400">Estado de Estación Base AU915 y paquetes de datos en tiempo real</p>
-        </div>
-        <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono rounded-full flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> GW AU915: OPERATIVO
-        </span>
-      </div>
-
-      <!-- Telemetry Technical Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-          <div class="flex justify-between items-center text-xs text-slate-400">
-            <span>Frecuencia Regional</span>
-            <i class="fa-solid fa-microchip text-slate-500"></i>
-          </div>
-          <p class="text-xl font-bold text-white font-mono">AU915-928 MHz</p>
-          <p class="text-[11px] text-slate-500">Sub-banda 2 (Argentina / Latinoamérica)</p>
-        </div>
-
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-          <div class="flex justify-between items-center text-xs text-slate-400">
-            <span>Señal Promedio (RSSI)</span>
-            <i class="fa-solid fa-wifi text-slate-500"></i>
-          </div>
-          <p class="text-xl font-bold text-emerald-400 font-mono">-98 dBm <span class="text-xs text-slate-400">(Excelente)</span></p>
-          <p class="text-[11px] text-slate-500">SNR Promedio: +8.5 dB</p>
-        </div>
-
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-          <div class="flex justify-between items-center text-xs text-slate-400">
-            <span>Tasa de Recepción</span>
-            <i class="fa-solid fa-diagram-project text-slate-500"></i>
-          </div>
-          <p class="text-xl font-bold text-blue-400 font-mono">99.8% PER</p>
-          <p class="text-[11px] text-slate-500">12 pkts / min por nodo</p>
-        </div>
-      </div>
-
-      <!-- Realtime Log Monitor -->
-      <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 space-y-3">
-        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-2">
-            <i class="fa-solid fa-terminal text-emerald-400"></i> Console Gateway Feed (Uplinks)
-          </h3>
-          <span class="text-[10px] font-mono text-slate-500">300ms refresh</span>
-        </div>
-        <div id="telemetry-log" class="font-mono text-[11px] h-64 overflow-y-auto space-y-1.5 p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-slate-300">
-          <!-- Live JS Telemetry lines -->
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ================= MODAL MOVER RODEO ================= -->
-  <div id="modal-mover" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="font-bold text-white text-base flex items-center gap-2">
-          <i class="fa-solid fa-truck-ramp-box text-emerald-400"></i> Rotar / Mover Rodeo
-        </h3>
-        <button onclick="closeModalMover()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block text-slate-400 font-medium mb-1">Rodeo Seleccionado</label>
-          <input type="text" id="mover-rodeo-nombre" readonly class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-200 font-semibold">
-        </div>
-
-        <div>
-          <label class="block text-slate-400 font-medium mb-1">Nuevo Potrero de Destino</label>
-          <select id="mover-potrero-destino" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-            <!-- Options added dynamically -->
-          </select>
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeModalMover()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-semibold">Cancelar</button>
-        <button onclick="confirmarMovimiento()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold">Confirmar Rotación</button>
-      </div>
     </div>
-  </div>
 
-  <!-- ================= JAVASCRIPT CORREGIDO Y ENCAPSULADO ================= -->
-  <script>
-    // --- ESTADO INICIAL DEL CAMPO BLASFER (-38.470694, -63.123916) ---
-    const CAMPO_CENTER = [-38.470694, -63.123916];
+    <!-- JS Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var map = L.map('map').setView([-38.470694, -63.123916], 14);
 
-    let fieldData = {
-      potreros: [
-        {
-          id: "pot-1",
-          nombre: "Potrero Norte (Alfalfa)",
-          cultivo: "Alfalfa pura",
-          fechaSiembra: "2024-03-15",
-          estado: "En Pastoreo",
-          coords: [
-            [-38.4660, -63.1290],
-            [-38.4660, -63.1190],
-            [-38.4710, -63.1190],
-            [-38.4710, -63.1290]
-          ],
-          color: "#22c55e"
-        },
-        {
-          id: "pot-2",
-          nombre: "Potrero Sur (Raigrás)",
-          cultivo: "Raigrás Anual + Trébol",
-          fechaSiembra: "2024-04-10",
-          estado: "En Descanso",
-          coords: [
-            [-38.4715, -63.1290],
-            [-38.4715, -63.1190],
-            [-38.4765, -63.1190],
-            [-38.4765, -63.1290]
-          ],
-          color: "#3b82f6"
-        },
-        {
-          id: "pot-3",
-          nombre: "Potrero Este (Verdeo)",
-          cultivo: "Avena / Cereal de Invierno",
-          fechaSiembra: "2024-05-02",
-          estado: "Listo para Ingreso",
-          coords: [
-            [-38.4660, -63.1180],
-            [-38.4660, -63.1090],
-            [-38.4710, -63.1090],
-            [-38.4710, -63.1180]
-          ],
-          color: "#eab308"
-        },
-        {
-          id: "pot-4",
-          nombre: "Potrero Bajo (Pastizal)",
-          cultivo: "Pastizal Natural",
-          fechaSiembra: "Autóctono",
-          estado: "En Pastoreo",
-          coords: [
-            [-38.4715, -63.1180],
-            [-38.4715, -63.1090],
-            [-38.4765, -63.1090],
-            [-38.4765, -63.1180]
-          ],
-          color: "#a855f7"
-        }
-      ],
-      rodeos: [
-        { id: "rod-1", nombre: "Lote Vaquillonas Angus", categoria: "Vaquillonas 2A", cabezas: 250, potreroId: "pot-1", diasEnCuadro: 6 },
-        { id: "rod-2", nombre: "Lote Novillos Recría", categoria: "Novillos Recría", cabezas: 200, potreroId: "pot-4", diasEnCuadro: 12 },
-        { id: "rod-3", nombre: "Lote Vacas de Cría", categoria: "Vacas c/ Cría", cabezas: 150, potreroId: "pot-2", diasEnCuadro: 2 }
-      ]
-    };
+            // Capa Satelital ESRI
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            }).addTo(map);
 
-    // --- VARIABLES DE NAVEGACIÓN Y MAPA ---
-    let map = null;
-    let polygonGroup = null;
-    let markerGroup = null;
-    let isSatellite = true;
-    let tileLayer = null;
-    let activeRodeoIdToMove = null;
+            // Marcador Estación Base
+            var marker = L.marker([-38.470694, -63.123916]).addTo(map);
+            marker.bindPopup("<b>Estación Base BLASFER</b><br>Gateway LoRaWAN Principal").openPopup();
 
-    // Capas Leaflet
-    const SATELLITE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-    const STREETS_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+            // Polígono de Potrero de Ejemplo sobre el campo real
+            var polygon = L.polygon([
+                [-38.465, -63.130],
+                [-38.465, -63.118],
+                [-38.475, -63.118],
+                [-38.475, -63.130]
+            ], {
+                color: '#10b981',
+                fillColor: '#10b981',
+                fillOpacity: 0.25
+            }).addTo(map);
 
-    // --- INICIALIZACIÓN GENERAL AL CARGAR PÁGINA ---
-    window.addEventListener('DOMContentLoaded', () => {
-      initMap();
-      renderCuadrosTab();
-      renderRodeosTab();
-      startTelemetrySimulation();
-    });
-
-    // --- INICIALIZACIÓN DEL MAPA LEAFLET ---
-    function initMap() {
-      if (map) {
-        map.remove();
-      }
-
-      // Crear Mapa en -38.470694, -63.123916 con zoom 14
-      map = L.map('map', {
-        center: CAMPO_CENTER,
-        zoom: 14,
-        zoomControl: true
-      });
-
-      // Capa Satelital ESRI
-      tileLayer = L.tileLayer(SATELLITE_URL, {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-        maxZoom: 18
-      }).addTo(map);
-
-      polygonGroup = L.layerGroup().addTo(map);
-      markerGroup = L.layerGroup().addTo(map);
-
-      // Dibujar elementos iniciales
-      renderMapPolygons();
-    }
-
-    // Centrar mapa
-    function centerField() {
-      if (map) {
-        map.setView(CAMPO_CENTER, 14);
-      }
-    }
-
-    // Alternar capa de mapa
-    function toggleMapLayer() {
-      if (!map) return;
-      map.removeLayer(tileLayer);
-      if (isSatellite) {
-        tileLayer = L.tileLayer(STREETS_URL, { attribution: '&copy; OpenStreetMap' }).addTo(map);
-        document.getElementById('map-layer-label').innerText = "Mapa de Calles / Topográfico";
-        isSatellite = false;
-      } else {
-        tileLayer = L.tileLayer(SATELLITE_URL, { attribution: 'Esri Satellite' }).addTo(map);
-        document.getElementById('map-layer-label').innerText = "Vista Satelital HD";
-        isSatellite = true;
-      }
-    }
-
-    // Renderizar Polígonos y Marcadores en el Mapa
-    function renderMapPolygons() {
-      if (!map || !polygonGroup || !markerGroup) return;
-
-      polygonGroup.clearLayers();
-      markerGroup.clearLayers();
-
-      // Marcador central del casco / base BLASFER
-      const hqIcon = L.divIcon({
-        className: 'custom-hq-icon',
-        html: `<div class="bg-emerald-500 text-slate-950 font-bold p-1.5 rounded-full border-2 border-white shadow-xl flex items-center justify-center w-7 h-7"><i class="fa-solid fa-tower-cell text-xs"></i></div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
-      });
-      L.marker(CAMPO_CENTER, { icon: hqIcon })
-        .bindPopup(`
-          <div class="p-1">
-            <p class="font-bold text-emerald-400 text-xs">ESTACIÓN BASE LORAWAN BLASFER</p>
-            <p class="text-[11px] text-slate-300">Coordenadas: -38.470694, -63.123916</p>
-            <p class="text-[10px] text-slate-400 mt-1">Cobertura: 15 km a la redonda</p>
-          </div>
-        `)
-        .addTo(markerGroup);
-
-      // Dibujar Potreros
-      fieldData.potreros.forEach(pot => {
-        const polygon = L.polygon(pot.coords, {
-          color: pot.color,
-          fillColor: pot.color,
-          fillOpacity: 0.25,
-          weight: 2
-        }).addTo(polygonGroup);
-
-        // Rodeos en este potrero
-        const rodeosEnPotrero = fieldData.rodeos.filter(r => r.potreroId === pot.id);
-        let rodeosText = rodeosEnPotrero.map(r => `• ${r.nombre} (${r.cabezas} cab)`).join('<br>') || '<i>Sin hacienda actualmente</i>';
-
-        polygon.bindPopup(`
-          <div class="p-2 space-y-1">
-            <h4 class="font-bold text-white text-sm border-b border-slate-700 pb-1">${pot.nombre}</h4>
-            <p class="text-xs text-slate-300"><b>Pastura:</b> ${pot.cultivo}</p>
-            <p class="text-xs text-slate-300"><b>Estado:</b> <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-emerald-400">${pot.estado}</span></p>
-            <div class="pt-1 text-xs text-slate-400">
-              <b class="text-slate-200">Hacienda presente:</b><br>${rodeosText}
-            </div>
-          </div>
-        `);
-
-        // Si el potrero tiene rodeo, simulamos marcadores de caravanas LoRaWAN adentro
-        if (rodeosEnPotrero.length > 0) {
-          const bounds = polygon.getBounds();
-          const center = bounds.getCenter();
-
-          // Marcador de rodeo principal
-          const cowIcon = L.divIcon({
-            className: 'custom-cow-icon',
-            html: `<div class="bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full border border-white shadow-lg flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-cow"></i> ${rodeosEnPotrero[0].cabezas} cab</div>`,
-            iconAnchor: [30, 10]
-          });
-
-          L.marker(center, { icon: cowIcon }).addTo(markerGroup);
-        }
-      });
-    }
-
-    // --- CAMBIO DE PESTAÑAS (TABS) ---
-    function switchTab(tabName) {
-      const tabs = ['mapa', 'cuadros', 'rodeos', 'telemetria'];
-      tabs.forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        const navBtn = document.getElementById(`nav-${t}`);
-        navBtn.classList.remove('bg-emerald-600', 'text-white', 'shadow-md');
-        navBtn.classList.add('text-slate-400');
-      });
-
-      // Activar la seleccionada
-      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-      const activeBtn = document.getElementById(`nav-${tabName}`);
-      activeBtn.classList.add('bg-emerald-600', 'text-white', 'shadow-md');
-      activeBtn.classList.remove('text-slate-400');
-
-      if (tabName === 'mapa' && map) {
-        setTimeout(() => map.invalidateSize(), 200);
-      }
-    }
-
-    // --- RENDER TAB CUADROS & PASTURAS ---
-    function renderCuadrosTab() {
-      const grid = document.getElementById('potreros-grid');
-      grid.innerHTML = '';
-
-      fieldData.potreros.forEach(pot => {
-        const rodeos = fieldData.rodeos.filter(r => r.potreroId === pot.id);
-        const totalCab = rodeos.reduce((acc, r) => acc + r.cabezas, 0);
-
-        let badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-        if (pot.estado === 'En Descanso') badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-        if (pot.estado === 'Listo para Ingreso') badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
-
-        const card = document.createElement('div');
-        card.className = "bg-slate-900 rounded-xl border border-slate-800 p-4 space-y-3 flex flex-col justify-between";
-        card.innerHTML = `
-          <div class="space-y-2">
-            <div class="flex justify-between items-start">
-              <h3 class="font-bold text-white text-base">${pot.nombre}</h3>
-              <span class="px-2 py-0.5 text-[11px] font-semibold border rounded-full ${badgeColor}">
-                ${pot.estado}
-              </span>
-            </div>
-            <p class="text-xs text-slate-300 flex items-center gap-1.5">
-              <i class="fa-solid fa-seedling text-emerald-400"></i> ${pot.cultivo}
-            </p>
-            <p class="text-[11px] text-slate-400 font-mono">Siembra / Implantación: ${pot.fechaSiembra}</p>
-          </div>
-
-          <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-            <div>
-              <p class="text-slate-400">Hacienda en Cuadro</p>
-              <p class="font-bold text-white text-sm">${totalCab} <span class="text-xs font-normal text-slate-400">cabezas</span></p>
-            </div>
-            <button onclick="switchTab('mapa')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 text-[11px]">
-              Ver en Mapa
-            </button>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-
-      document.getElementById('kpi-potreros-count').innerText = `${fieldData.potreros.length} cuadros`;
-    }
-
-    // --- RENDER TAB RODEOS & HACIENDA ---
-    function renderRodeosTab() {
-      const tbody = document.getElementById('rodeos-table-body');
-      tbody.innerHTML = '';
-
-      let totalCabezas = 0;
-
-      fieldData.rodeos.forEach(rod => {
-        totalCabezas += rod.cabezas;
-        const potrero = fieldData.potreros.find(p => p.id === rod.potreroId);
-        const potreroNombre = potrero ? potrero.nombre : 'Sin Asignar';
-
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-800/30 transition-colors";
-        tr.innerHTML = `
-          <td class="p-3.5 font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-cow text-emerald-400"></i> ${rod.nombre}
-          </td>
-          <td class="p-3.5 text-slate-300">${rod.categoria}</td>
-          <td class="p-3.5 text-center font-mono font-bold text-emerald-400">${rod.cabezas}</td>
-          <td class="p-3.5 text-slate-300">${potreroNombre}</td>
-          <td class="p-3.5 font-mono text-slate-400">${rod.diasEnCuadro} días</td>
-          <td class="p-3.5 text-right">
-            <button onclick="openModalMover('${rod.id}')" class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded font-medium text-[11px] transition-colors">
-              <i class="fa-solid fa-arrows-rotate"></i> Rotar Potrero
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      document.getElementById('kpi-total-cabeza').innerText = `${totalCabezas} caravanas`;
-    }
-
-    // --- MODAL DE ROTACIÓN / MOVIMIENTO ---
-    function openModalMover(rodeoId) {
-      activeRodeoIdToMove = rodeoId;
-      const rodeo = fieldData.rodeos.find(r => r.id === rodeoId);
-      if (!rodeo) return;
-
-      document.getElementById('mover-rodeo-nombre').value = `${rodeo.nombre} (${rodeo.cabezas} cabezas)`;
-      
-      const selectDestino = document.getElementById('mover-potrero-destino');
-      selectDestino.innerHTML = '';
-
-      fieldData.potreros.forEach(pot => {
-        const isCurrent = pot.id === rodeo.potreroId;
-        const option = document.createElement('option');
-        option.value = pot.id;
-        option.innerText = `${pot.nombre} [${pot.estado}] ${isCurrent ? '(Actual)' : ''}`;
-        if (isCurrent) option.disabled = true;
-        selectDestino.appendChild(option);
-      });
-
-      document.getElementById('modal-mover').classList.remove('hidden');
-    }
-
-    function closeModalMover() {
-      document.getElementById('modal-mover').classList.add('hidden');
-      activeRodeoIdToMove = null;
-    }
-
-    function confirmarMovimiento() {
-      if (!activeRodeoIdToMove) return;
-
-      const nuevoPotreroId = document.getElementById('mover-potrero-destino').value;
-      const rodeo = fieldData.rodeos.find(r => r.id === activeRodeoIdToMove);
-
-      if (rodeo && nuevoPotreroId) {
-        rodeo.potreroId = nuevoPotreroId;
-        rodeo.diasEnCuadro = 1; // Reiniciar contador de días
-
-        // Actualizar interfaz completa
-        renderRodeosTab();
-        renderCuadrosTab();
-        renderMapPolygons();
-        closeModalMover();
-
-        // Feed log de telemetría
-        appendTelemetryLog(`[ROTACIÓN EXITOSA] ${rodeo.nombre} movido a potrero ID: ${nuevoPotreroId}`);
-      }
-    }
-
-    // --- SIMULADOR DE TELEMETRÍA LORAWAN EN VIVO ---
-    function startTelemetrySimulation() {
-      const logContainer = document.getElementById('telemetry-log');
-      
-      const sampleDevEuis = ["38A4B1002200", "38A4B1002201", "38A4B1002202", "38A4B1002203", "38A4B1002204"];
-      
-      setInterval(() => {
-        if (document.getElementById('tab-telemetria').classList.contains('hidden')) return;
-
-        const randomDev = sampleDevEuis[Math.floor(Math.random() * sampleDevEuis.length)];
-        const rssi = -90 - Math.floor(Math.random() * 15);
-        const snr = (7 + Math.random() * 4).toFixed(1);
-        const bat = (3.8 + Math.random() * 0.4).toFixed(2);
-
-        const logLine = `[${new Date().toLocaleTimeString()}] UPLINK DevEUI: ${randomDev} | RSSI: ${rssi} dBm | SNR: +${snr} dB | Bat: ${bat}V (Solar OK) | GPS Fix: OK`;
-        appendTelemetryLog(logLine);
-      }, 2500);
-    }
-
-    function appendTelemetryLog(text) {
-      const logContainer = document.getElementById('telemetry-log');
-      if (!logContainer) return;
-
-      const p = document.createElement('p');
-      p.className = "text-slate-300 hover:text-emerald-300 transition-colors";
-      p.innerText = text;
-      logContainer.prepend(p);
-
-      if (logContainer.children.length > 40) {
-        logContainer.removeChild(logContainer.lastChild);
-      }
-    }
-
-    // --- IMPORTAR / EXPORTAR DATOS DEL ESTABLECIMIENTO ---
-    function exportData() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fieldData, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `BLASFER_Campo_Backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          if (parsed.potreros && parsed.rodeos) {
-            fieldData = parsed;
-            renderCuadrosTab();
-            renderRodeosTab();
-            renderMapPolygons();
-            alert("¡Datos del establecimiento BLASFER cargados correctamente!");
-          } else {
-            alert("El archivo no tiene la estructura válida de BLASFER.");
-          }
-        } catch (err) {
-          alert("Error al procesar el archivo JSON.");
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function openModalAddPotrero() {
-      alert("Para agregar un potrero personalizado con coordenadas avanzadas, podés exportar el archivo JSON, agregar la lista de coordenadas y reimportarlo en un clic.");
-    }
-  </script>
+            polygon.bindPopup("<b>Potrero 1 - Alfalfa</b><br>Estado: En Pastoreo (600 Cabezas)");
+        });
+    </script>
 </body>
 </html>
